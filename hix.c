@@ -216,6 +216,7 @@ size_t strl(char *buf) {
 }
  
 ushort get_current_columns(int *err) {
+    if (isatty(fileno(stdout))) return MIN_COLS_32_CHAR;
     struct winsize w;
     if (ioctl(0, TIOCGWINSZ, &w) == -1) {
         *err = errno;
