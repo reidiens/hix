@@ -4,6 +4,7 @@
 #include <linux/limits.h>
 #include <stdbool.h>
 #include <sys/ioctl.h>
+#include <sys/stat.h>
 
 #define MIN_COLS_32_CHAR    148  
 #define MIN_COLS_28_CHAR    130
@@ -25,6 +26,7 @@ void    print_hex_line(uchar *buf, ushort chars);
 void    dump_hex(uchar *buf, ushort chars, size_t bufsz);
 size_t  strl(char *buf);
 ushort  find_max_chars(unsigned short availcol);
+bool    is_dir(char *fname);
 
 int main(int argc, char **argv) {
     char *fname = NULL;
@@ -35,6 +37,18 @@ int main(int argc, char **argv) {
         got_name = true;
     } 
     else fname = argv[1];
+    struct stat fstat;
+    if (stat(fname, &fstat) == -1) {
+        err = errno;
+        perror("hix: stat");
+        if (got_name) free(fname);
+        return err;
+    }
+    if (S_ISDIR(fstat.st_mode)) {
+        fprintf(stderr, "hix: \"%s\" is a directory\n", fname);
+        if (got_name) free(fname);
+        return -1;
+    }
     FILE *fp = fopen(fname, "rb");
     if (!fp) {
         err = errno;
@@ -212,12 +226,19 @@ ushort get_current_columns(int *err) {
 
 ushort find_max_chars(unsigned short availcol) {
     if (availcol < MIN_COLS_8_CHAR) return 4;
-    else if (availcol >= MIN_COLS_8_CHAR && availcol < MIN_COLS_12_CHAR) return 8;
-    else if (availcol >= MIN_COLS_12_CHAR && availcol < MIN_COLS_16_CHAR) return 12;
-    else if (availcol >= MIN_COLS_16_CHAR && availcol < MIN_COLS_20_CHAR) return 16;
-    else if (availcol >= MIN_COLS_20_CHAR && availcol < MIN_COLS_24_CHAR) return 20;
-    else if (availcol >= MIN_COLS_24_CHAR && availcol < MIN_COLS_28_CHAR) return 24;
-    else if (availcol >= MIN_COLS_28_CHAR && availcol < MIN_COLS_32_CHAR) return 28;
-    else if (availcol >= MIN_COLS_32_CHAR) return 32;
+    else if (availcol >= MIN_COLS_8_CHAR && availcol < MIN_COLS_12_CHAR)
+        return 8;
+    else if (availcol >= MIN_COLS_12_CHAR && availcol < MIN_COLS_16_CHAR)
+        return 12;
+    else if (availcol >= MIN_COLS_16_CHAR && availcol < MIN_COLS_20_CHAR)
+        return 16;
+    else if (availcol >= MIN_COLS_20_CHAR && availcol < MIN_COLS_24_CHAR)
+        return 20;
+    else if (availcol >= MIN_COLS_24_CHAR && availcol < MIN_COLS_28_CHAR)
+        return 24;
+    else if (availcol >= MIN_COLS_28_CHAR && availcol < MIN_COLS_32_CHAR)
+        return 28;
+    else if (availcol >= MIN_COLS_32_CHAR)
+        return 32;
     else return 16;
 }
