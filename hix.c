@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 #define MIN_COLS_32_CHAR    148  
 #define MIN_COLS_28_CHAR    130
@@ -26,45 +27,49 @@ void    print_hex_line(uchar *buf, ushort chars);
 void    dump_hex(uchar *buf, ushort chars, size_t bufsz);
 size_t  strl(char *buf);
 ushort  find_max_chars(unsigned short availcol);
+int     eval_args(int argc, char **argv, char **fname);
+
+bool need_fname_from_user = false;
+bool powers_of_2_only = false;
 
 int main(int argc, char **argv) {
     char *fname = NULL;
     int err = 0;
-    bool got_name = false;
-    if (argc < 2) {
-        if ((fname = get_fname(&err)) == NULL) return err;
-        got_name = true;
-    } 
-    else fname = argv[1];
+    err = eval_args(argc, argv, &fname);
+    if (err == -1) return err; 
+    if (need_fname_from_user) {
+        if ((fname = get_fname(&err)) == NULL)
+            return err;
+    }
     struct stat fstat;
     if (stat(fname, &fstat) == -1) {
         err = errno;
         perror("hix: stat");
-        if (got_name) free(fname);
+        if (need_fname_from_user) free(fname);
         return err;
     }
     if (S_ISDIR(fstat.st_mode)) {
         fprintf(stderr, "hix: \"%s\" is a directory\n", fname);
-        if (got_name) free(fname);
+        if (need_fname_from_user) free(fname);
         return -1;
     }
     FILE *fp = fopen(fname, "rb");
     if (!fp) {
         err = errno;
         perror("hix: fopen");
-        if (got_name) free(fname);
+        if (need_fname_from_user) free(fname);
         fclose(fp);
         return err;
     }
     size_t fsz = get_fsz(fp, &err);
     if (fsz == 0 && err != 0) {
-        if (got_name) free(fname);
+        if (need_fname_from_user) free(fname);
         fclose(fp);
         return err;
     }
     else if (fsz == 0 && err == 0) {
         fprintf(stderr, "hix: File is empty\n");
-        if (got_name) free(fname);
+        if (need_fname_from_user) free(fname);
         fclose(fp);
         return -1;
     }
@@ -76,21 +81,21 @@ int main(int argc, char **argv) {
         return err;
     }
     if (read_file(fp, fb, fsz, &err) == -1) {
-        if (got_name) free(fname);
+        if (need_fname_from_user) free(fname);
         free(fb);
         fclose(fp);
         return err;
     }
     ushort availcol = get_current_columns(&err);
     if (availcol == 0 && err != 0) {
-        if (got_name) free(fname);
+        if (need_fname_from_user) free(fname);
         free(fb);
         fclose(fp);
         return err;
     }
     ushort chars = find_max_chars(availcol);
     dump_hex(fb, chars, fsz);
-    if (got_name) free(fname);
+    if (need_fname_from_user) free(fname);
     free(fb);
     fclose(fp);
     return 0;
@@ -242,4 +247,31 @@ ushort find_max_chars(unsigned short availcol) {
     else if (availcol >= MIN_COLS_32_CHAR)
         return 32;
     else return 16;
+}
+
+int eval_args(int argc, char **argv, char **fname) {
+    int ret = 0;
+    if (!fname) return -1;
+    if (argc < 2) {
+        need_fname_from_user = true;
+        return 0;
+    }
+    bool got_fname = false;
+    for (int i = 1; i < argc; i++) {
+        if (argv[i][0] == '-') {
+            if (argv[i][1] == 'p' && argv[i][2] == '\0') powers_of_2_only = true;
+            else {
+                fprintf(stderr, "hix: Unrecognized option: \"%s\"\n", argv[i]);
+                return -1;
+            }
+        }
+        else {
+            if (!got_fname) {
+                *fname = argv[i]; 
+                got_fname = true;
+            }
+        }
+    }
+    if (*fname == NULL) need_fname_from_user = true;
+    return 0;
 }
