@@ -26,7 +26,6 @@ void    print_hex_line(uchar *buf, ushort chars);
 void    dump_hex(uchar *buf, ushort chars, size_t bufsz);
 size_t  strl(char *buf);
 ushort  find_max_chars(unsigned short availcol);
-bool    is_dir(char *fname);
 
 int main(int argc, char **argv) {
     char *fname = NULL;
