@@ -109,6 +109,7 @@ char* get_fname(int *err) {
         if (ferror(stdin)) {
             *err = errno;
             perror("hix: fgets");
+            free(ret);
             return NULL;
         }
     }
