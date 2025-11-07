@@ -250,7 +250,6 @@ ushort find_max_chars(unsigned short availcol) {
 }
 
 int eval_args(int argc, char **argv, char **fname) {
-    int ret = 0;
     if (!fname) return -1;
     if (argc < 2) {
         need_fname_from_user = true;
