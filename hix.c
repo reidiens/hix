@@ -235,15 +235,15 @@ ushort find_max_chars(unsigned short availcol) {
     else if (availcol >= MIN_COLS_8_CHAR && availcol < MIN_COLS_12_CHAR)
         return 8;
     else if (availcol >= MIN_COLS_12_CHAR && availcol < MIN_COLS_16_CHAR)
-        return 12;
+        return (powers_of_2_only) ? 8 : 12;
     else if (availcol >= MIN_COLS_16_CHAR && availcol < MIN_COLS_20_CHAR)
         return 16;
     else if (availcol >= MIN_COLS_20_CHAR && availcol < MIN_COLS_24_CHAR)
-        return 20;
+        return (powers_of_2_only) ? 16 : 20;
     else if (availcol >= MIN_COLS_24_CHAR && availcol < MIN_COLS_28_CHAR)
-        return 24;
+        return (powers_of_2_only) ? 16 : 24;
     else if (availcol >= MIN_COLS_28_CHAR && availcol < MIN_COLS_32_CHAR)
-        return 28;
+        return (powers_of_2_only) ? 16 : 28;
     else if (availcol >= MIN_COLS_32_CHAR)
         return 32;
     else return 16;
